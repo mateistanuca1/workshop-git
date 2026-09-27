@@ -329,6 +329,27 @@ And let's get going! 🚀
    The `~/.gitconfig` is the global Git configuration file.
    The `git config` command reads from and makes updates to these files.
 
+## Pausing and Undoing: The Short Version
+
+`git add` and `git commit` move your work *forward*. Three other commands move it back, and they come up constantly.
+Here is the short version now, so the names are familiar when you meet them in the exercises below.
+Each one gets its own hands-on section later.
+
+| You want to ... | Command | Works on |
+| --- | --- | --- |
+| set unfinished work aside and get a clean tree | `git stash` | your uncommitted changes |
+| bring that work back | `git stash pop` | your uncommitted changes |
+| throw away changes to a file | `git restore <file>` | **files** |
+| take a file out of the staging area | `git restore --staged <file>` | **files** |
+| get rid of a commit you just made | `git reset HEAD^` | **commits** |
+
+The one distinction worth remembering from the start:
+
+- **`git restore` is about files.** You point it at a file and say "put this back the way it was". History is untouched.
+- **`git reset` is about commits.** You point it at a commit and say "make the branch end here instead". Everything after that commit stops being part of the branch.
+
+Mixing up the two is the single most common source of confusion, so whenever you reach for one of them, first ask yourself: *am I fixing a file, or am I fixing history?*
+
 ## Clean Up / Reset Your Git Environment
 
 We make mistakes:
@@ -342,6 +363,26 @@ We make mistakes:
 These things happen.
 We solve them.
 We just need to know how to do that.
+
+The section below uses both `git restore` and `git reset`.
+Keep the difference from the ["Pausing and Undoing"](#pausing-and-undoing-the-short-version) section in mind:
+
+| | `git restore` | `git reset` |
+| --- | --- | --- |
+| argument | a **file** (`git restore c-hello/Makefile`) | a **commit** (`git reset HEAD^`) |
+| effect | that file goes back to the way it was | the branch stops at that commit |
+| history | untouched | commits after the argument are dropped from the branch |
+
+`git reset` also decides what happens to the changes from the commits it drops:
+
+| | staging area | working directory |
+| --- | --- | --- |
+| `git reset --soft <commit>` | changes are kept, staged | untouched |
+| `git reset <commit>` (i.e. `--mixed`, the default) | cleared | changes are kept here, unstaged |
+| `git reset --hard <commit>` | cleared | changes are **gone** |
+
+`--hard` is the only one of the three that destroys work, so it is the only one to be careful with.
+Below we use the default (`--mixed`): we want the `blabla.txt` file back as an untracked file, not deleted.
 
 1. First prepare a messed up environment, by running:
 
@@ -568,9 +609,91 @@ Or, reset the repository:
    git stash list
    ```
 
-> [!TIP]
-> If you want to bring the changes back but **keep** the stash entry (for example, to apply it on several branches), use `git stash apply` instead of `git stash pop`.
-> You can later remove a stash you no longer need with `git stash drop`.
+### `pop` or `apply`?
+
+Both re-apply a stash entry to your working directory.
+The difference is what happens to the entry afterwards:
+
+- `git stash pop` re-applies it and **removes** it from the stash list. This is what you want most of the time: you are resuming the work, so the copy on the side is no longer needed.
+- `git stash apply` re-applies it and **keeps** it in the list. Useful when you want the same changes on more than one branch, or when you want a safety net while you check that the changes still make sense.
+
+After a `git stash apply` you remove the entry yourself, when you no longer need it:
+
+```console
+git stash list
+git stash drop          # drops stash@{0}
+git stash drop stash@{1}
+```
+
+### When Re-applying Conflicts
+
+A stash entry is a set of changes, not a snapshot of the whole project.
+So if the lines it touches changed in the meantime - you pulled, or you committed
+something else on those same lines - Git cannot re-apply it cleanly and you get
+a conflict:
+
+```console
+$ git stash pop
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+The stash entry is kept in case you need it again.
+```
+
+This is the same kind of conflict as in a merge, and you resolve it the same way:
+
+1. See which files are in conflict:
+
+   ```console
+   git status
+   ```
+
+   They appear under `Unmerged paths:`.
+
+1. Open each one.
+   Git has marked the two versions inside the file:
+
+   ```text
+   <<<<<<< Updated upstream
+   the version that is on the branch
+   =======
+   the version from your stash
+   >>>>>>> Stashed changes
+   ```
+
+   Edit the file so it contains what you actually want, and delete the three marker lines.
+
+1. Mark the conflict as resolved:
+
+   ```console
+   git add <file>
+   git status
+   ```
+
+> [!IMPORTANT]
+> Read that last line of the output again: `The stash entry is kept in case you need it again.`
+> When `git stash pop` hits a conflict it does **not** drop the entry, even after you resolve everything.
+> That is deliberate - if you make a mess of the resolution, the original is still there - but it means you have to remove it yourself once you are happy:
+>
+> ```console
+> git stash list
+> git stash drop
+> ```
+>
+> Otherwise stale entries pile up and, a week later, you have no idea which `stash@{3}` was which.
+
+If you would rather start over than resolve the conflict, throw the half-applied changes away and try again later:
+
+```console
+git reset --hard HEAD
+git stash list
+```
+
+The entry is still in the list, so nothing is lost.
+
+> [!NOTE]
+> `git checkout -- .` does **not** work here: Git refuses conflicted files with `error: path '<file>' is unmerged`.
+> `git reset --hard HEAD` is the one that clears the conflict.
+> It discards *everything* uncommitted, which is exactly what you want in this case - `git stash` had left you with a clean working directory, so the only thing it throws away is the failed re-application.
 
 ### Do It Yourself
 
@@ -586,6 +709,27 @@ Or, reset the repository:
    - Stash it with `git stash`.
    - Check out another branch (for example `git checkout base`), look around, then check out `main` again.
    - Bring your work back with `git stash pop`.
+
+1. Do the same, but with `git stash apply` instead of `git stash pop`.
+   Run `git stash list` afterwards and note that the entry is still there.
+   Drop it with `git stash drop`.
+
+1. Now provoke a conflict on purpose, so you see one before you meet it for real:
+
+   ```console
+   git checkout main
+   echo "my unfinished work" >> README.md
+   git stash
+   echo "a different change on the same line" >> README.md
+   git commit -s -am 'README: Add a line'
+   git stash pop
+   ```
+
+   The `git stash pop` conflicts, because both changes touch the end of the same file.
+   Resolve it: open `README.md`, edit away the conflict markers, then `git add README.md`.
+
+   Then check `git stash list`: the entry is still there, even though you resolved the conflict.
+   Drop it with `git stash drop`.
 
    If, at any point, you get lost, run the reset script:
 
