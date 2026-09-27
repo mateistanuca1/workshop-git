@@ -349,6 +349,11 @@ We just need to know how to do that.
    ./mess-it-up.sh
    ```
 
+   > [!IMPORTANT]
+   > The `mess-it-up.sh` script (and the `support/` directory) are only tracked on the `main` branch.
+   > The script leaves you on the `base` branch, so both disappear from your working directory while you repair the mess.
+   > Always run `./reset-all.sh` first (it brings you back to `main`) before running `./mess-it-up.sh` again.
+
 1. Now look at the mess:
 
    ```console
@@ -362,7 +367,7 @@ We just need to know how to do that.
    ```
 
    See the `bla bla` commit (latest).
-   And see the wrong message (`Bue` instead of `Bye`) for the other other commit.
+   And see the wrong message (`Bue` instead of `Bye`) for the commit below it.
 
 1. **Note**: If, at any point in time, you miss a command, or something bad simply happened, reset the environment by running:
 
@@ -461,6 +466,13 @@ We just need to know how to do that.
 ### Do It Yourself
 
 1. Repeat the above steps at least 2 more times.
+
+   Reset the environment before each repetition, so that `mess-it-up.sh` is available again:
+
+   ```console
+   ./reset-all.sh
+   ./mess-it-up.sh
+   ```
 
    Aim to have one time without checking the instructions.
    That is, run the `./mess-it-up.sh` script and then repair the mess by yourself.
@@ -612,7 +624,7 @@ Or, reset the repository:
    There are a lot of files.
    We want to add them as 3 separate commits in 3 separate branches.
 
-   1. The `bye.c`, `Makefile`, `Makefile.uk`, `fc...`, `xen...`, `README.md` files will go to the `base` branch.
+   1. The `bye.c`, `Makefile`, `Makefile.uk`, `fc...`, `xen...`, `README.md`, `.gitignore` files will go to the `base` branch.
    1. The `defconfig...`, `build...`, `run...`, `README.scripts.md` files will go to the `scripts` branch.
    1. The `test...` files will go to the `test` branch.
 
@@ -798,9 +810,10 @@ Let's create commit to `test` branch:
 
 ### Do It Yourself
 
-1. Reset the configuration:
+1. Go back to the repository root (the previous steps left you inside `c-bye/`) and reset the configuration:
 
    ```console
+   cd ..
    ./reset-all.sh
    ```
 
@@ -840,7 +853,7 @@ Let's create commit to `test` branch:
    There are a lot of files.
    We want to add them as 3 separate commits in 3 separate branches.
 
-   1. The `bye.cpp`, `Makefile`, `Makefile.uk`, `Config.uk`, `fc...`, `xen...`, `README.md` files will go to the `base` branch.
+   1. The `bye.cpp`, `Makefile`, `Makefile.uk`, `Config.uk`, `fc...`, `xen...`, `README.md`, `.gitignore` files will go to the `base` branch.
    1. The `defconfig...`, `build...`, `run...`, `README.scripts.md` files will go to the `scripts` branch.
    1. The `test...` files will go to the `test` branch.
 
@@ -871,7 +884,7 @@ Let's create commit to `test` branch:
    There are a lot of files.
    We want to add them as 3 separate commits in 3 separate branches.
 
-   1. The `bye.py`, `Makefile`, `Makefile.uk`, `Config.uk`, `fc...`, `xen...`, `README.md` files will go to the `base` branch.
+   1. The `bye.py`, `Makefile`, `Makefile.uk`, `Config.uk`, `fc...`, `xen...`, `README.md`, `.gitignore` files will go to the `base` branch.
    1. The `defconfig...`, `build...`, `run...`, `README.scripts.md` files will go to the `scripts` branch.
    1. The `test...` files will go to the `test` branch.
 
